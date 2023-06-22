@@ -1,6 +1,6 @@
-<svg width="400", height="230" xmlns="http://www.w3.org/2000/svg">
+<svg width="400" height="230" xmlns="http://www.w3.org/2000/svg">
   <text x="0" y="72" font-size="72" font-family="Consolas" fill="yellow" stroke-width="1" stroke="brown">A</text>
-  <text x="56" y="68" text-anchor="start" font-family="Courier" fill="white" font-size="60">PI</text>
+  <text x="56" y="68" text-anchor="start" font-family="Courier" fill="#bbbbbb" font-size="60">PI</text>
   <text x="0" y="144" font-size="72" font-family="Consolas" fill="brown" stroke-width="2" stroke="green">M</text>
   <text x="56" y="136" text-anchor="start" font-family="Courier" fill="#67abab" font-size="60">arkup</text>
   <text x="0" y="216" font-size="72" font-family="Consolas" fill="silver" stroke-width="3" stroke="yellow">L</text>
