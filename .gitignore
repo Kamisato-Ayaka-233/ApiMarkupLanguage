@@ -1,0 +1,5 @@
+apiMarkupLanguage.code-workspace
+.tsbuildinfo
+
+node_modules
+dist

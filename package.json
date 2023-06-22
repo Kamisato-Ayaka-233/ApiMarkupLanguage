@@ -1,0 +1,27 @@
+{
+  "name": "api-markup-language",
+  "version": "1.0.0",
+  "description": "一种记录REST API文档规范的TypeScript解析器。",
+  "main": "index.ts",
+  "scripts": {
+    "build": "npx tsc",
+    "test": "npx ts-node ./src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "none"
+  },
+  "keywords": [
+    "api",
+    "interface",
+    "ts",
+    "typescript",
+    "bilibili"
+  ],
+  "author": "Kamisato-Ayaka-233",
+  "license": "MIT",
+  "devDependencies": {
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.3"
+  }
+}
