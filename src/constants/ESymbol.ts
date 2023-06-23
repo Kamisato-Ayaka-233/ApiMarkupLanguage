@@ -9,5 +9,6 @@ export enum Symbol {
   colon = ':',
   doubleQuotation = '"',
   singleQuotation = "'",
-  comma = ','
+  comma = ',',
+  commet = '#'
 }

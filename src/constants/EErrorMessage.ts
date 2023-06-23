@@ -1,4 +1,6 @@
 export enum ErrorMessage {
   syxtaxError = "Syntax error",
-  missingField = 'Missing field'
+  typeError = 'Type error',
+  missingField = 'Missing field',
+  missingType = 'Missing type',
 }

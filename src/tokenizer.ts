@@ -150,7 +150,7 @@ class Tokenizer {
         hint = this.collectString(true)
       }
       else {
-        while (this.char && !this.isBlank(this.char) && ![Symbol.equalTo, Symbol.openBrace, Symbol.closeBrace].includes(this.char)) {
+        while (this.char && ![Symbol.equalTo, Symbol.openBrace, Symbol.closeBrace].includes(this.char)) {
           hint += this.char
           this.advance()
         }
@@ -192,14 +192,75 @@ class Tokenizer {
     return str
   }
 
+  tokenizeParameterDataTypeGenericityTargets(): tokens.ParameterDataType[] {
+    if (this.char == Symbol.lessThan) {
+      const genericityTargets: tokens.ParameterDataType[] = []
+      let currentGenericityTargets: tokens.ParameterDataType[] = []
+      let currentName: string = ''
+
+      this.advance()
+      while (this.char) {
+        if (this.char == `${Symbol.comma}`) {
+          genericityTargets.push(new tokens.ParameterDataType(currentName, currentGenericityTargets))
+          currentName = ''
+          currentGenericityTargets = []
+        }
+        else if (this.char == `${Symbol.lessThan}`) {
+          currentGenericityTargets.push(...this.tokenizeParameterDataTypeGenericityTargets())
+        }
+        else if (this.char == `${Symbol.greaterThan}`) {
+          genericityTargets.push(new tokens.ParameterDataType(currentName, currentGenericityTargets))
+          break
+        }
+        else if (!this.isBlank(this.char)) {
+          currentName += this.char
+        }
+
+        this.advance()
+      }
+
+      // console.log(JSON.stringify(genericityTargets, undefined, 2))
+
+      return genericityTargets
+    }
+
+    return []
+  }
+  tokenizeParameterDataType(): tokens.ParameterDataType | undefined {
+    if (!this.isBlank(this.char)) {
+      let name: string = ''
+      let genericityTargets: tokens.ParameterDataType[] = []
+
+      while (this.char) {
+        if (this.char == Symbol.lessThan) {
+          genericityTargets.push(...this.tokenizeParameterDataTypeGenericityTargets())
+          if (this.char == `${Symbol.greaterThan}`) {
+            this.advance()
+          }
+        }
+        else if (this.isBlank(this.char)) {
+          break
+        }
+        else {
+          name += this.char
+          this.advance()
+        }
+      }
+
+      return new tokens.ParameterDataType(name, genericityTargets)
+    }
+
+    return undefined
+  }
+
   tokenizeParameter(): tokens.Parameter[] {
     const parameters: tokens.Parameter[] = []
 
     if (this.char == Symbol.openBrace) {
-      let currentType: string = ''
+      let currentType: undefined | tokens.ParameterDataType
       let currentName: string = ''
       let currentHint: string = ''
-      let currentValue: JsonDataType.JsonPrimitive | JsonDataType.JsonArray | tokens.Token = null
+      let currentValue: JsonDataType.JsonPrimitive | JsonDataType.JsonArray | tokens.Type = null
 
       this.advance()
       this.skipBlanks()
@@ -209,20 +270,16 @@ class Tokenizer {
           break
         }
         else if (!this.isBlank(this.char)) {
-          let identifier: string = ''
-          while (this.char && !this.isBlank(this.char) && ![Symbol.colon, Symbol.closeBrace, Symbol.equalTo].includes(this.char)) {
-            identifier += this.char
-            this.advance()
-          }
+          const maybeType = <tokens.ParameterDataType>this.tokenizeParameterDataType()
 
           this.skipBlanks()
           if ([Symbol.colon, Symbol.closeBrace, Symbol.equalTo].includes(this.char)) {
-            currentType = DataType.auto
-            currentName = identifier
+            currentType = new tokens.ParameterDataType(DataType.auto)
+            currentName = maybeType.tokenValue.name
             currentHint = this.collectHint()
           }
           else {
-            currentType = identifier
+            currentType = maybeType
             while (this.char && !this.isBlank(this.char) && ![Symbol.colon, Symbol.closeBrace, Symbol.equalTo].includes(this.char)) {
               currentName += this.char
               this.advance()
@@ -238,7 +295,7 @@ class Tokenizer {
           }
 
           parameters.push(new tokens.Parameter(currentType, currentName, currentHint, currentValue))
-          currentType = ''
+          currentType = undefined
           currentName = ''
           currentHint = '' 
           currentValue = null
@@ -361,6 +418,17 @@ class Tokenizer {
           else {
             throw new exceptions.AmlSyntaxError(this.getStartPos(), this.pos)
           }
+        }
+
+        else if (id == Keyword.post) {
+
+        }
+
+        else if (id == Symbol.commet) {
+          while (this.char && this.char != '\n') {
+            this.advance()
+          }
+          this.advance()
         }
       }
 

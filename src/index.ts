@@ -9,8 +9,6 @@ class ApiMarkupLanguage {
   }
   public static async parseToHtml(source: string): Promise<string> {
     const tokens = await this.tokenize(source)
-    console.log(JSON.stringify(tokens, undefined, 2))
-
     const parser = new Parser(tokens)
 
     return parser.html()
@@ -21,9 +19,31 @@ class ApiMarkupLanguage {
 
     return parser.markdown()
   }
+  public static async parseToPythonHttpx(source: string): Promise<string> {
+    const tokens = await this.tokenize(source)
+    const parser = new Parser(tokens)
+
+    console.log(JSON.stringify(tokens, undefined, 2))
+
+    return ''
+  }
 }
 
-ApiMarkupLanguage.parseToHtml('type typeExample = {str strExample: 字符串示例 ="fjioasjggjpo mfoiasjns" num numExample: 数字示例 = 12345 T genericityExample: 泛型示例}')
-ApiMarkupLanguage.parseToHtml('GET getGenshinVersions: 获取《原神》所有版本号和版本主题 = {str url = "https://api.21cnt.cn/genshin/version" response: application/json = {str current: 当前版本 obj versions}}')
+ApiMarkupLanguage.parseToPythonHttpx(`
+type getGenshinItemIdsQuery = {
+  str lang: 语言 = "chs"
+}
+
+type getGenshinItemIdsRes<T> = {
+  obj<T> *version: 项目ID与项目名称
+}
+
+GET getGenshinItemIds: Get both item ids and item names of Genshin Impact = {
+  url = "https://api.21cnt.cn/genshin/itemId"
+  getGenshinItemIdsQuery<num> query
+  getGenshinItemIdsRes response
+}
+
+`)
 
 export default ApiMarkupLanguage

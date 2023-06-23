@@ -3,6 +3,7 @@ import { DataType } from "./constants/EDataType"
 import { JsonArray, JsonDataType, JsonPrimitive } from "./constants/TJsonDataType"
 import { HttpRequestMethod } from "./constants/EHttpRequestMethod"
 import { Dict } from "./constants/TDict"
+import * as TkValue from "./constants/IToken"
 
 class Token {
   protected name: string = 'token'
@@ -51,16 +52,37 @@ class Root extends Token {
     }
     return false
   }
+
+  public get tokenValue(): TkValue.Root {
+    return <TkValue.Root>this.value
+  }
+}
+
+class ParameterDataType extends Token {
+  constructor(name: string, genericityTargets: ParameterDataType[] = []) {
+    super('parameter_data_type', {
+      name,
+      genericityTargets
+    })
+  }
+
+  public get tokenValue(): TkValue.ParameterDataType {
+    return <TkValue.ParameterDataType>this.value
+  }
 }
 
 class Parameter extends Token {
-  constructor(dataType: string = DataType.auto, name: string, hint: string = '', defaultValue: JsonPrimitive | JsonArray | Type = null) {
+  constructor(dataType: ParameterDataType, name: string, hint: string = '', defaultValue: JsonPrimitive | JsonArray | Type = null) {
     super('parameter', {
       name,
       dataType,
       hint,
       defaultValue
     })
+  }
+
+  public get tokenValue(): TkValue.Parameter {
+    return <TkValue.Parameter>this.value
   }
 }
 
@@ -71,6 +93,10 @@ class Import extends Token {
       items
     })
   }
+
+  public get tokenValue(): TkValue.Import {
+    return <TkValue.Import>this.value
+  }
 }
 
 class Enumeration extends Token {
@@ -79,6 +105,10 @@ class Enumeration extends Token {
       name,
       items
     })
+  }
+
+  public get tokenValue(): TkValue.Enumeration {
+    return <TkValue.Enumeration>this.value
   }
 }
 
@@ -89,6 +119,10 @@ class Type extends Token {
       genericities,
       items
     })
+  }
+
+  public get tokenValue(): TkValue.Type {
+    return <TkValue.Type>this.value
   }
 }
 
@@ -105,6 +139,10 @@ class Interface extends Token {
       notice
     })
   }
+
+  public get tokenValue(): TkValue.Interface {
+    return <TkValue.Interface>this.value
+  }
 }
 
 export {
@@ -113,6 +151,7 @@ export {
   Type,
   Interface,
   Parameter,
+  ParameterDataType,
   Enumeration,
   Import
 }
