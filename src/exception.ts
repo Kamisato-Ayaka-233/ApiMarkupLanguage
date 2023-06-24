@@ -22,6 +22,12 @@ class AmlValueError extends Error {
   }
 }
 
+class AmlImportError extends Error {
+  constructor(file?: string, imports?: string[], startPos?: number, endPos?: number) {
+    super(constructErrorMessage(ErrorMessage.importError, startPos, endPos, `${file ?? '*'}-${imports?.join(', ') ?? '*'}`))
+  }
+}
+
 class AmlMissingField extends Error {
   constructor(field?: string, startPos?: number, endPos?: number) {
     super(constructErrorMessage(ErrorMessage.missingField, startPos, endPos, field ?? '*'))
@@ -40,5 +46,6 @@ export {
   AmlMissingField,
   AmlMissingType,
   AmlValueError,
+  AmlImportError,
   constructErrorMessage
 }

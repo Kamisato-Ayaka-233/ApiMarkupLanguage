@@ -9,7 +9,7 @@ import { HttpRequestMethod } from './constants/EHttpRequestMethod'
 import { TypeType } from './constants/ETypeType'
 import { ParameterOption } from './constants/EParameterOption'
 import { isInObject } from './utils'
-import { TokenizeArrayReturn } from './constants/ITokenizeArrayReturn'
+import axios from 'axios'
 
 class Tokenizer {
   public source: string
@@ -17,8 +17,6 @@ class Tokenizer {
   private char: string // 这个变量也可能为undefined，但这是为了避免麻烦而骗过TypeScript类型检查，所以只设置string
   private pos: number
   private advanced: number
-  private caughtError: boolean
-  private types: tokens.Type[]
 
   constructor(source: string) {
     this.source = source
@@ -26,8 +24,6 @@ class Tokenizer {
     this.char = ''
     this.pos = -1
     this.advanced = 0
-    this.caughtError = false
-    this.types = []
   }
 
   advance() {
@@ -66,6 +62,29 @@ class Tokenizer {
     }
 
     return undefined
+  }
+
+  async importTypesFromUrl(url: string, items: string[] = [Symbol.asterisk]): Promise<tokens.Type[]> {
+    let types: tokens.Type[] = []
+
+    const res = await axios.get(url, {
+      responseType: 'text'
+    })
+
+    if ([200, 201].includes(res.status)) {
+      const imports = await new Tokenizer(res.data).tokenize()
+
+      imports.tokenValue.tokens.forEach(token => {
+        if (token instanceof tokens.Type && (items.includes(Symbol.asterisk) || items.includes(token.tokenValue.name))) {
+          types.push(token)
+        }
+      });
+    }
+    else {
+      throw new exceptions.AmlImportError(url, items)
+    }
+
+    return types
   }
 
   collectChar(): string {
@@ -172,7 +191,7 @@ class Tokenizer {
         hint = this.collectString(true)
       }
       else {
-        while (this.char && ![Symbol.equalTo, Symbol.closeBrace, Symbol.closeSquareBracket].includes(this.char)) {
+        while (this.char && ![Symbol.equalTo, Symbol.closeBrace, Symbol.closeSquareBracket, '\n'].includes(this.char)) {
           hint += this.char
           this.advance()
         }
@@ -371,7 +390,7 @@ class Tokenizer {
     return parameters
   }
 
-  tokenize() {
+  public async tokenize() {
     const root = new tokens.Root('Title')
     
     this.advance()
@@ -439,7 +458,7 @@ class Tokenizer {
           }
         }
 
-        else if (id == Keyword.get) {
+        else if (isInObject(id, HttpRequestMethod)) {
           let name: string = ''
           let hint: string = ''
 
@@ -450,9 +469,7 @@ class Tokenizer {
           }
 
           this.skipBlanks()
-          if (this.char == Symbol.colon) {
-            hint = this.collectHint()
-          }
+          hint = this.collectHint()
 
           this.skipBlanks()
           if (this.char == Symbol.equalTo) {
@@ -463,18 +480,13 @@ class Tokenizer {
 
               const url = this.findParameter('url', parameters)
               const query = this.findParameter('query', parameters)
-              const data = this.findParameter('data', parameters)
+              const body = this.findParameter('body', parameters)
               const response = this.findParameter('response', parameters)
               const notice = this.findParameter('notice', parameters)
+              const header = this.findParameter('header', parameters)
+              const cookie = this.findParameter('cookie', parameters)
 
-              if (!url) {
-                throw new exceptions.AmlMissingField('url', this.getStartPos(), this.pos)
-              }
-              else if (!response) {
-                throw new exceptions.AmlMissingField('response', this.getStartPos(), this.pos)
-              }
-
-              root.push(new tokens.Interface(name, hint, HttpRequestMethod.get, url, response, data, query, notice))
+              root.push(new tokens.Interface(name, hint, <HttpRequestMethod>id, url, response, query, body, header, cookie, notice))
             }
             else {
               throw new exceptions.AmlSyntaxError(this.getStartPos(), this.pos)
@@ -485,8 +497,38 @@ class Tokenizer {
           }
         }
 
-        else if (id == Keyword.post) {
+        else if (id == Keyword.from) {
+          this.skipBlanks()
+          const file = this.collectString(false, [' ', '\n'])
+          const targets: string[] = []
 
+          this.skipBlanks()
+          const currentId = this.collectChar().toLowerCase()
+          if (currentId == Keyword.import) {
+            let currentTarget: string = ''
+
+            this.skipBlanks()
+            while (this.char) {
+              if (this.char == Symbol.comma) {
+                this.advance()
+                targets.push(currentTarget)
+                currentTarget = ''
+              }
+              else if (this.char == '\n') {
+                targets.push(currentTarget)
+                break
+              }
+              else if (!this.isBlank(this.char)) {
+                currentTarget += this.char
+              }
+
+              this.advance()
+            }
+          }
+
+          if (file.toLowerCase().startsWith('http')) {
+            (await this.importTypesFromUrl(file, targets)).forEach(type => root.push(type))
+          }
         }
 
         else if (id == Symbol.commet) {

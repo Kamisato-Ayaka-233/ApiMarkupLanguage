@@ -6,5 +6,5 @@ export enum HttpRequestMethod {
   head = 'head',
   patch = 'patch',
   options = 'options',
-  webSocket = 'webSocket'
+  webSocket = 'websocket'
 }

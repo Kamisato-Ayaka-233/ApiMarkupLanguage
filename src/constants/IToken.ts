@@ -7,7 +7,7 @@ import { ParameterOption } from "./EParameterOption";
 
 export interface Root {
   title: string, 
-  tokens: tokens.Token
+  tokens: tokens.Token[]
 }
 
 export interface Parameter {
@@ -21,11 +21,6 @@ export interface Parameter {
 export interface ParameterDataType {
   name: string, 
   genericityTargets: tokens.ParameterDataType[]
-}
-
-export interface Import {
-  file: string, 
-  items: string[]
 }
 
 export interface Enumeration {

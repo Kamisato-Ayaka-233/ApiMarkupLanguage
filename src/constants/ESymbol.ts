@@ -12,4 +12,5 @@ export enum Symbol {
   comma = ',',
   commet = '#',
   dot = '.',
+  asterisk = '*',
 }

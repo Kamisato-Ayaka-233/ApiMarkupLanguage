@@ -89,19 +89,6 @@ class Parameter extends Token {
   }
 }
 
-class Import extends Token {
-  constructor(file: string, items: string[]) {
-    super('import', {
-      file,
-      items
-    })
-  }
-
-  public get tokenValue(): TkValue.Import {
-    return <TkValue.Import>this.value
-  }
-}
-
 class Enumeration extends Token {
   constructor(name: string, items: Dict) {
     super('enum', {
@@ -132,14 +119,16 @@ class Type extends Token {
 }
 
 class Interface extends Token {
-  constructor(name: string, hint: string = '', method: HttpRequestMethod, url: Parameter, response: Parameter, data?: Parameter, query?: Parameter, notice?: Parameter) {
+  constructor(name: string, hint: string = '', method: HttpRequestMethod, url?: Parameter, response?: Parameter, query?: Parameter, body?: Parameter, header?: Parameter, cookie?: Parameter, notice?: Parameter) {
     super('interface', {
       name,
       hint,
       method,
       url,
       query,
-      data,
+      body,
+      header,
+      cookie,
       response,
       notice
     })
@@ -158,5 +147,4 @@ export {
   Parameter,
   ParameterDataType,
   Enumeration,
-  Import
 }
