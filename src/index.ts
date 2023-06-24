@@ -31,16 +31,16 @@ class ApiMarkupLanguage {
 
 ApiMarkupLanguage.parseToPythonHttpx(`
 type getGenshinItemIdsQuery = {
-  str lang: 语言 = "chs"
+  optional str lang: 语言 = "chs"
 }
 
 type getGenshinItemIdsRes<T> = {
-  obj<T> *version: 项目ID与项目名称
+  version: 项目ID与项目名称 = [1145141919810]num
 }
 
 GET getGenshinItemIds: Get both item ids and item names of Genshin Impact = {
   url = "https://api.21cnt.cn/genshin/itemId"
-  getGenshinItemIdsQuery<num> query
+  getGenshinItemIdsQuery query
   getGenshinItemIdsRes response
 }
 

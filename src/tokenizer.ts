@@ -6,6 +6,10 @@ import { DataType } from './constants/EDataType'
 import * as JsonDataType from './constants/TJsonDataType'
 import * as exceptions from './exception'
 import { HttpRequestMethod } from './constants/EHttpRequestMethod'
+import { TypeType } from './constants/ETypeType'
+import { ParameterOption } from './constants/EParameterOption'
+import { isInObject } from './utils'
+import { TokenizeArrayReturn } from './constants/ITokenizeArrayReturn'
 
 class Tokenizer {
   public source: string
@@ -113,30 +117,48 @@ class Tokenizer {
       this.skipBlanks()
 
       if (this.char == `${Symbol.openBrace}`) {
-        value = new tokens.Type('', [], this.tokenizeParameter())
+        value = new tokens.Type('', [], this.tokenizeParameter(), 0, TypeType.object)
       }
       else if (this.char == `${Symbol.openSquareBracket}`) {
-
+        value = this.tokenizeArray() ?? null
       }
       else {
-        value = this.collectString(false, ['}'])
+        if ([Symbol.doubleQuotation, Symbol.singleQuotation].includes(this.char)) {
+          value = this.collectString(true)
+        }
+        else {
+          value = this.collectString(false, [Symbol.closeBrace, Symbol.closeSquareBracket, '\n'])
+        }
       }
     }
 
     return value
   }
 
-  collectNumber(): number {
-    let str: string = ''
+  collectNumber(onlyIntegers: boolean = false): number {
+    if ('0123456789'.includes(this.char)) {
+      let str: string = ''
+      let isFloat: boolean = false
 
-    while (this.char && "0123456789.".includes(str)) {
-      str += this.char
-      this.advance()
+      while (this.char && `0123456789${onlyIntegers ? '' : '.'}`.includes(this.char)) {
+        if (this.char == Symbol.dot) {
+          if (isFloat) {
+            throw new exceptions.AmlValueError(str, this.getStartPos(), this.pos)
+          }
+
+          isFloat = true
+        }
+
+        str += this.char
+        this.advance()
+      }
+
+      const num: number = Number(str)
+
+      return num
     }
 
-    const num: number = Number(str)
-
-    return num
+    return 0
   }
 
   collectHint(): string {
@@ -150,13 +172,12 @@ class Tokenizer {
         hint = this.collectString(true)
       }
       else {
-        while (this.char && ![Symbol.equalTo, Symbol.openBrace, Symbol.closeBrace].includes(this.char)) {
+        while (this.char && ![Symbol.equalTo, Symbol.closeBrace, Symbol.closeSquareBracket].includes(this.char)) {
           hint += this.char
           this.advance()
         }
+        hint = hint.trim()
       }
-
-      hint = hint.trim()
     }
 
     return hint
@@ -183,10 +204,11 @@ class Tokenizer {
       this.advance()
     }
     else if (!mustBeIncluded) {
-      while (this.char && !this.isBlank(this.char) && !unclosedSymbols?.includes(this.char)) {
+      while (this.char && !unclosedSymbols?.includes(this.char)) {
         str += this.char
         this.advance()
       }
+      str = str.trim()
     }
 
     return str
@@ -238,7 +260,7 @@ class Tokenizer {
             this.advance()
           }
         }
-        else if (this.isBlank(this.char)) {
+        else if (this.isBlank(this.char) || [Symbol.colon, Symbol.closeBrace, Symbol.closeSquareBracket, Symbol.colon, '::'].includes(this.char)) {
           break
         }
         else {
@@ -253,57 +275,97 @@ class Tokenizer {
     return undefined
   }
 
+  tokenizeArray(name: string = '', genericities: string[] = []): tokens.Type | undefined {
+    if (this.char == Symbol.openSquareBracket) {
+      this.advance()
+      this.skipBlanks()
+      const length = this.collectNumber(true)
+
+      this.skipBlanks()
+      if (this.char == `${Symbol.closeSquareBracket}`) {
+        this.advance()
+        if (this.char == `${Symbol.openBrace}`) {
+          const parameters: tokens.Parameter[] = this.tokenizeParameter()
+
+          return new tokens.Type(name, genericities, [new tokens.Type('', [], parameters, 0, TypeType.object)], length, TypeType.singleTypeArray)
+        }
+        else if (!this.isBlank(this.char)) {
+          return new tokens.Type(name, genericities, [new tokens.Parameter(<tokens.ParameterDataType>this.tokenizeParameterDataType(), '')], length, TypeType.singleTypeArray)
+        }
+      }
+      else {
+        const parameters: tokens.Parameter[] = []
+        while (this.char && this.char != `${Symbol.closeSquareBracket}`) {
+          const maybeParameter = this.tokenizeSingleParameter()
+          if (maybeParameter) {
+            parameters.push(maybeParameter)
+          }
+          else {
+            this.advance()
+          }
+        }
+
+        return new tokens.Type(name, genericities, parameters, length, TypeType.multiTypeArray)
+      }
+    }
+
+    return undefined
+  }
+
+  tokenizeSingleParameter(): tokens.Parameter | undefined {
+    if (!this.isBlank(this.char) && ![Symbol.openBrace, Symbol.openSquareBracket, Symbol.closeBrace, Symbol.closeSquareBracket, '[{}]'].includes(this.char)) {
+      let type: tokens.ParameterDataType = new tokens.ParameterDataType(DataType.auto)
+      let name: string = ''
+      let hint: string = ''
+      let value: JsonDataType.JsonPrimitive | JsonDataType.JsonArray | tokens.Type = null
+      let option: ParameterOption = ParameterOption.undefined
+
+      let maybeType: tokens.ParameterDataType = <tokens.ParameterDataType>this.tokenizeParameterDataType()
+
+      this.skipBlanks()
+      if (isInObject(maybeType.tokenValue.name, ParameterOption)) {
+        option = <ParameterOption>maybeType.tokenValue.name
+        maybeType = <tokens.ParameterDataType>this.tokenizeParameterDataType()
+      }
+
+      this.skipBlanks()
+      if ([Symbol.colon, Symbol.closeBrace, Symbol.closeSquareBracket, Symbol.equalTo, '=='].includes(this.char)) {
+        name = maybeType.tokenValue.name
+      }
+      else {
+        type = maybeType
+        while (this.char && !this.isBlank(this.char) && ![Symbol.colon, Symbol.closeBrace, Symbol.closeSquareBracket, Symbol.equalTo, '=='].includes(this.char)) {
+          name += this.char
+          this.advance()
+        }
+      }
+
+      this.skipBlanks()
+      hint = this.collectHint()
+      this.skipBlanks()
+      value = this.collectParameterValue()
+
+      return new tokens.Parameter(type, name, hint, value, option)
+    }
+
+    return undefined
+  }
+
   tokenizeParameter(): tokens.Parameter[] {
     const parameters: tokens.Parameter[] = []
 
     if (this.char == Symbol.openBrace) {
-      let currentType: undefined | tokens.ParameterDataType
-      let currentName: string = ''
-      let currentHint: string = ''
-      let currentValue: JsonDataType.JsonPrimitive | JsonDataType.JsonArray | tokens.Type = null
-
       this.advance()
-      this.skipBlanks()
-      while (this.char) {
-        if (this.char == `${Symbol.closeBrace}`) {
-          this.advance()
-          break
-        }
-        else if (!this.isBlank(this.char)) {
-          const maybeType = <tokens.ParameterDataType>this.tokenizeParameterDataType()
-
-          this.skipBlanks()
-          if ([Symbol.colon, Symbol.closeBrace, Symbol.equalTo].includes(this.char)) {
-            currentType = new tokens.ParameterDataType(DataType.auto)
-            currentName = maybeType.tokenValue.name
-            currentHint = this.collectHint()
-          }
-          else {
-            currentType = maybeType
-            while (this.char && !this.isBlank(this.char) && ![Symbol.colon, Symbol.closeBrace, Symbol.equalTo].includes(this.char)) {
-              currentName += this.char
-              this.advance()
-            }
-            this.skipBlanks()
-            currentHint = this.collectHint()
-          }
-
-          this.skipBlanks(false)
-
-          if (this.char == `${Symbol.equalTo}`) {
-            currentValue = this.collectParameterValue()
-          }
-
-          parameters.push(new tokens.Parameter(currentType, currentName, currentHint, currentValue))
-          currentType = undefined
-          currentName = ''
-          currentHint = '' 
-          currentValue = null
+      while (this.char && this.char != `${Symbol.closeBrace}`) {
+        const maybeParameter = this.tokenizeSingleParameter()
+        if (maybeParameter) {
+          parameters.push(maybeParameter)
         }
         else {
           this.advance()
         }
       }
+      this.advance()
     }
 
     return parameters
@@ -322,7 +384,7 @@ class Tokenizer {
           let name: string = ''
 
           this.skipBlanks()
-          while (this.char && !this.isBlank(this.char) && ![Symbol.lessThan, Symbol.equalTo, '::'].includes(this.char)) {
+          while (this.char && !this.isBlank(this.char) && ![Symbol.lessThan, Symbol.equalTo, '<='].includes(this.char)) {
             name += this.char
             this.advance()
           }
@@ -336,7 +398,10 @@ class Tokenizer {
             if (this.char == `${Symbol.openBrace}`) {
               const parameters: tokens.Parameter[] = this.tokenizeParameter()
 
-              root.push(new tokens.Type(name, genericities, parameters))
+              root.push(new tokens.Type(name, genericities, parameters, 0, TypeType.object))
+            }
+            else if (this.char == `${Symbol.openSquareBracket}`) {
+              root.push(<tokens.Type>this.tokenizeArray(name, genericities))
             }
             else {
               throw new exceptions.AmlSyntaxError(this.getStartPos(), this.pos)

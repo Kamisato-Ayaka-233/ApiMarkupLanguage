@@ -4,6 +4,8 @@ import { JsonArray, JsonDataType, JsonPrimitive } from "./constants/TJsonDataTyp
 import { HttpRequestMethod } from "./constants/EHttpRequestMethod"
 import { Dict } from "./constants/TDict"
 import * as TkValue from "./constants/IToken"
+import { TypeType } from "./constants/ETypeType"
+import { ParameterOption } from "./constants/EParameterOption"
 
 class Token {
   protected name: string = 'token'
@@ -72,12 +74,13 @@ class ParameterDataType extends Token {
 }
 
 class Parameter extends Token {
-  constructor(dataType: ParameterDataType, name: string, hint: string = '', defaultValue: JsonPrimitive | JsonArray | Type = null) {
+  constructor(dataType: ParameterDataType, name: string, hint: string = '', defaultValue: JsonPrimitive | JsonArray | Type = null, option: ParameterOption = ParameterOption.undefined) {
     super('parameter', {
       name,
       dataType,
       hint,
-      defaultValue
+      defaultValue,
+      option
     })
   }
 
@@ -113,11 +116,13 @@ class Enumeration extends Token {
 }
 
 class Type extends Token {
-  constructor(name: string, genericities: string[], items: Parameter[]) {
+  constructor(name: string, genericities: string[], items: (Parameter | Type)[] | JsonArray, length: number, type: TypeType) {
     super('type', {
       name,
       genericities,
-      items
+      items,
+      length,
+      type
     })
   }
 

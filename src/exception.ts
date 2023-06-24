@@ -12,7 +12,13 @@ class AmlSyntaxError extends Error {
 
 class AmlTypeError extends Error {
   constructor(type?: string, field?: string, startPos?: number, endPos?: number) {
-    super(constructErrorMessage(ErrorMessage.missingType, startPos, endPos, `${field ?? '*'}-${type ?? '*'}`))
+    super(constructErrorMessage(ErrorMessage.typeError, startPos, endPos, `${field ?? '*'}-${type ?? '*'}`))
+  }
+}
+
+class AmlValueError extends Error {
+  constructor(value?: string, startPos?: number, endPos?: number) {
+    super(constructErrorMessage(ErrorMessage.valueError, startPos, endPos, value ?? '*'))
   }
 }
 
@@ -33,5 +39,6 @@ export {
   AmlTypeError,
   AmlMissingField,
   AmlMissingType,
+  AmlValueError,
   constructErrorMessage
 }

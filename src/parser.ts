@@ -48,20 +48,28 @@ class Parser {
     return Object.values(DataType).includes(<DataType>dataType.tokenValue.name)
   }
 
-  private parseParameterGenericityTargets(parameter: tokens.Parameter, types: Record<string, tokens.Type>): tokens.ParameterDataType {
-    const genericityTargets = parameter.tokenValue.dataType.tokenValue.genericityTargets
-    let parsedParameterDataType: tokens.ParameterDataType
+  private parseParameterGenericityTargets(parameter: tokens.Parameter, types: Record<string, tokens.Type>): tokens.Type | void {
+    // const dataTypeValue = parameter.tokenValue.dataType.tokenValue
+    // const genericityTargets = dataTypeValue.genericityTargets
+    // let parsedType: tokens.Type
 
-    genericityTargets.forEach(genericityTarget => {
-      if (!this.isJsonDataType(genericityTarget) && types[genericityTarget.tokenValue.name]) {
-        const genericityTargetValue = types[genericityTarget.tokenValue.name].tokenValue.
-      }
-      else {
-        throw new exceptions.AmlTypeError(genericityTarget.tokenValue.name)
-      }
-    });
+    // if (this.isJsonDataType(parameter.tokenValue.dataType)) {
+    //   throw new exceptions.AmlTypeError(dataTypeValue.name)
+    // }
 
-    return parsedParameterDataType
+    // genericityTargets.forEach(genericityTarget => {
+    //   const genericityTargetValue = genericityTarget.tokenValue
+
+    //   if (!this.isJsonDataType(genericityTarget) && types[genericityTargetValue.name]) {
+    //     const targetTypeValue = types[genericityTargetValue.name].tokenValue
+    //     if ()
+    //   }
+    //   else {
+    //     throw new exceptions.AmlTypeError(genericityTargetValue.name)
+    //   }
+    // });
+
+    // return parsedParameterDataType
   }
 
   private generatePythonCodeHttpx(api: tokens.Interface, types: Record<string, tokens.Type> = {}): string {
