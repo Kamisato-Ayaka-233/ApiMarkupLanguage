@@ -4,7 +4,8 @@ export enum DataType {
   obj = 'obj',
   arr = 'arr',
   bool = 'bool',
-  null = 'null',
+  null = 'null', // none用以兼容null
+  none = 'none',
   unknown = 'unknown',
   auto = 'auto'
 }

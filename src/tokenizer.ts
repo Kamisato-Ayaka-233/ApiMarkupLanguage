@@ -129,7 +129,7 @@ class Tokenizer {
   }
 
   collectParameterValue(): JsonDataType.JsonPrimitive | JsonDataType.JsonArray | tokens.Type {
-    let value: JsonDataType.JsonPrimitive | JsonDataType.JsonArray | tokens.Type = null
+    let value: JsonDataType.JsonPrimitive | JsonDataType.JsonArray | tokens.Type | undefined = null
 
     if (this.char == Symbol.equalTo) {
       this.advance()
@@ -146,7 +146,13 @@ class Tokenizer {
           value = this.collectString(true)
         }
         else {
-          value = this.collectString(false, [Symbol.closeBrace, Symbol.closeSquareBracket, '\n'])
+          value = this.collectNumber()
+          if (!value) {
+            value = this.collectString(false, [Symbol.closeBrace, Symbol.closeSquareBracket, '\n'])
+            if ([DataType.null, DataType.none].includes(<DataType>value)) {
+              value = null
+            }
+          }
         }
       }
     }
@@ -154,18 +160,26 @@ class Tokenizer {
     return value
   }
 
-  collectNumber(onlyIntegers: boolean = false): number {
+  collectNumber(onlyIntegers: boolean = false, onlyPositiveNumber: boolean = false): number | undefined {
     if ('0123456789'.includes(this.char)) {
       let str: string = ''
       let isFloat: boolean = false
+      let isNegativeNumber: boolean = false
 
-      while (this.char && `0123456789${onlyIntegers ? '' : '.'}`.includes(this.char)) {
+      while (this.char && `0123456789${onlyIntegers ? '' : '.'}${onlyPositiveNumber ? '' : '-'}`.includes(this.char)) {
         if (this.char == Symbol.dot) {
           if (isFloat) {
             throw new exceptions.AmlValueError(str, this.getStartPos(), this.pos)
           }
 
           isFloat = true
+        }
+        if (this.char == Symbol.minus) {
+          if (isNegativeNumber) {
+            throw new exceptions.AmlValueError(str, this.getStartPos(), this.pos)
+          }
+
+          isNegativeNumber = true
         }
 
         str += this.char
@@ -177,7 +191,7 @@ class Tokenizer {
       return num
     }
 
-    return 0
+    return undefined
   }
 
   collectHint(): string {
@@ -298,7 +312,7 @@ class Tokenizer {
     if (this.char == Symbol.openSquareBracket) {
       this.advance()
       this.skipBlanks()
-      const length = this.collectNumber(true)
+      const length: number = this.collectNumber(true) ?? 0
 
       this.skipBlanks()
       if (this.char == `${Symbol.closeSquareBracket}`) {

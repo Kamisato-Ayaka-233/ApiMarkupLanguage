@@ -3,6 +3,7 @@ import { ParserOptions } from "./constants/IParserOption"
 import { Dict } from "./constants/TDict"
 import { DataType } from "./constants/EDataType"
 import * as exceptions from './exception'
+import { isInObject } from "./utils"
 
 class Parser {
   public root: tokens.Root
@@ -45,7 +46,7 @@ class Parser {
   }
 
   private isJsonDataType(dataType: tokens.ParameterDataType): boolean {
-    return Object.values(DataType).includes(<DataType>dataType.tokenValue.name)
+    return isInObject(<DataType>dataType.tokenValue.name, DataType)
   }
 
   private parseParameterGenericityTargets(parameter: tokens.Parameter, types: Record<string, tokens.Type>): tokens.Type | void {
