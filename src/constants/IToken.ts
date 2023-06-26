@@ -23,11 +23,6 @@ export interface ParameterDataType {
   genericityTargets: tokens.ParameterDataType[]
 }
 
-export interface Enumeration {
-  name: string, 
-  items: Dict
-}
-
 export interface Type {
   name: string, 
   genericities: string[], 
@@ -40,9 +35,11 @@ export interface Interface {
   name: string, 
   hint: string, 
   method: HttpRequestMethod, 
-  url: tokens.Parameter, 
-  response: tokens.Parameter, 
-  data?: tokens.Parameter, 
+  url?: tokens.Parameter, 
+  response?: tokens.Parameter, 
+  body?: tokens.Parameter,
+  header?: tokens.Parameter,
+  cookie?: tokens.Parameter, 
   query?: tokens.Parameter, 
   notice?: tokens.Parameter
 }

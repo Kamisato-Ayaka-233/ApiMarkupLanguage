@@ -6,6 +6,8 @@ export enum Symbol {
   closeBrace = '}',
   openSquareBracket = '[',
   closeSquareBracket = ']',
+  openBracket = '(',
+  closeBracket = ')',
   colon = ':',
   doubleQuotation = '"',
   singleQuotation = "'",

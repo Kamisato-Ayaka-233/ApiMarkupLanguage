@@ -89,19 +89,6 @@ class Parameter extends Token {
   }
 }
 
-class Enumeration extends Token {
-  constructor(name: string, items: Dict) {
-    super('enum', {
-      name,
-      items
-    })
-  }
-
-  public get tokenValue(): TkValue.Enumeration {
-    return <TkValue.Enumeration>this.value
-  }
-}
-
 class Type extends Token {
   constructor(name: string, genericities: string[], items: (Parameter | Type)[] | JsonArray, length: number, type: TypeType) {
     super('type', {
@@ -146,5 +133,4 @@ export {
   Interface,
   Parameter,
   ParameterDataType,
-  Enumeration,
 }
