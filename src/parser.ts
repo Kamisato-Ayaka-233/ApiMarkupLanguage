@@ -27,7 +27,7 @@ class Parser {
     return result
   }
 
-  public pythonHttpx(): string | undefined {
+  public pythonHttpx(): string {
     let result: string = "import httpx\n\n"
 
     const rootValue = <Dict>this.root.tokenValue
@@ -50,68 +50,75 @@ class Parser {
     return isInObject(dataType.tokenValue.name, DataType)
   }
 
-  private parseParameterGenericityTargets(parameterDataType: tokens.ParameterDataType, types: Record<string, tokens.Type>): tokens.Type | undefined {
-    const dataTypeValue = parameterDataType.tokenValue
-    const genericityTargets = dataTypeValue.genericityTargets
-    let parsedType: tokens.Type | undefined = undefined
+  private parseParameterGenericityTargets(parameter: tokens.Parameter, types: Record<string, tokens.Type>): tokens.Parameter | undefined {
+    const parameterDataTypeValue = parameter.tokenValue.dataType.tokenValue
 
-    if (this.isJsonDataType(parameterDataType)) {
-      parsedType = new tokens.Type(parameterDataType.tokenValue.name, [], [], 0, TypeType.primitive)
-      return parsedType
-    }
-    else if (types[dataTypeValue.name]) {
-      parsedType = types[dataTypeValue.name]
-    }
-    else {
-      throw new exceptions.AmlTypeError(dataTypeValue.name)
-    }
+    return undefined
+  }
 
-    genericityTargets.forEach(genericityTarget => {
-      const genericityTargetValue = genericityTarget.tokenValue
+  private indent(str: string, indent: number = 4): string {
+    const strArr: string[] = str.trim().replaceAll('\r', '').split('\n')
+    let result: string = ''
 
-      if (!this.isJsonDataType(genericityTarget)) {
-        if (types[genericityTargetValue.name]) {
-          const targetTypeValue = types[genericityTargetValue.name].tokenValue
-          // if ()
-        }
-        else {
-          throw new exceptions.AmlTypeError(genericityTargetValue.name)
-        }
+    strArr.forEach((s: string) => {
+      for (let i = 0; i < indent; i++) {
+        result += ' '
       }
-    });
 
-    return parsedType
+      result += s + '\n'
+    })
+    
+    return result
   }
 
   private generatePythonCodeHttpx(api: tokens.Interface, types: Record<string, tokens.Type> = {}): string {
-    let result: string = `\ndef ${api.tokenValue.name}(`
+    const apiValue = api.tokenValue
+    let result: string = `\ndef ${apiValue.name}(`
 
-    if (api.tokenValue.query) {
-      const queryValue = api.tokenValue.query.tokenValue
-      if (queryValue.dataType.tokenValue.name != `${DataType.auto}`) {
-        if (this.isJsonDataType(queryValue.dataType)) {
-          const queryDataType = queryValue.dataType.tokenValue.name
-          if ([DataType.unknown, DataType.auto, DataType.obj, 'dataType'].includes(queryDataType) && queryValue.defaultValue instanceof tokens.Type) {
-            const queryDefaultValue = queryValue.defaultValue.tokenValue
-          }
-          else {
-            throw new exceptions.AmlTypeError(queryDataType, queryValue.name)
-          }
-        }
-        else if (types[queryValue.dataType.tokenValue.name]) {
-          const queryDataType = queryValue.dataType.tokenValue.name
-          let queryDefaultValue: Dict | undefined
-          if (queryValue.defaultValue instanceof tokens.Type) {
-            queryDefaultValue = queryValue.defaultValue.tokenValue
-          }
-
-
-        }
-        else {
-          throw new exceptions.AmlMissingType(queryValue.dataType.tokenValue.name)
-        }
-      }
+    result += ') -> httpx.Response:\n'
+    result += this.indent('"""')
+    if (apiValue.hint) {
+      result += this.indent(apiValue.hint)
     }
+    if (apiValue.notice) {
+      result += '\n'
+      result += this.indent(String(apiValue.notice.tokenValue.defaultValue))
+    }
+    result += this.indent('"""')
+
+    if (apiValue.url?.tokenValue.defaultValue) {
+      result += this.indent(`return httpx.request("${apiValue.method}", "${apiValue.url.tokenValue.defaultValue}")`)
+    }
+    else {
+      result += this.indent('pass')
+    }
+
+    // if (api.tokenValue.query) {
+    //   const queryValue = api.tokenValue.query.tokenValue
+    //   if (queryValue.dataType.tokenValue.name != DataType.auto) {
+    //     if (this.isJsonDataType(queryValue.dataType)) {
+    //       const queryDataType = queryValue.dataType.tokenValue.name
+    //       if ([DataType.unknown, DataType.auto, DataType.obj].includes(<DataType>queryDataType) && queryValue.defaultValue instanceof tokens.Type) {
+    //         const queryDefaultValue = queryValue.defaultValue.tokenValue
+    //       }
+    //       else {
+    //         throw new exceptions.AmlTypeError(queryDataType, queryValue.name)
+    //       }
+    //     }
+    //     else if (types[queryValue.dataType.tokenValue.name]) {
+    //       const queryDataType = queryValue.dataType.tokenValue.name
+    //       let queryDefaultValue: Dict | undefined
+    //       if (queryValue.defaultValue instanceof tokens.Type) {
+    //         queryDefaultValue = queryValue.defaultValue.tokenValue
+    //       }
+
+
+    //     }
+    //     else {
+    //       throw new exceptions.AmlMissingType(queryValue.dataType.tokenValue.name)
+    //     }
+    //   }
+    // }
 
     return result
   }

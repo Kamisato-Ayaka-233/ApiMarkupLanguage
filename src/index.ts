@@ -25,7 +25,7 @@ class ApiMarkupLanguage {
 
     console.log(JSON.stringify(tokens, undefined, 2))
 
-    return ''
+    return parser.pythonHttpx()
   }
 }
 
@@ -55,7 +55,7 @@ type getAccountGenshinRoleBasicInfoData = {
   num card_play_level: 未知
 }
 
-get getAccountGenshinRoleBasicInfo = {
+get api1: Get basic role info = {
   url = https://api-takumi-record.mihoyo.com/game_record/app/genshin/api/roleBasicInfo
   query = {
     str role_id: 游戏账号UID
@@ -72,6 +72,8 @@ get getAccountGenshinRoleBasicInfo = {
     ltmid_v2
   }
 }
-`)
+`).then(result => {
+  console.log(result)
+})
 
 export default ApiMarkupLanguage

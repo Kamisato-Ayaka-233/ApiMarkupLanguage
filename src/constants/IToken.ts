@@ -1,7 +1,6 @@
 import * as tokens from "src/token";
 import { JsonPrimitive, JsonArray } from "./TJsonDataType";
 import { HttpRequestMethod } from "./EHttpRequestMethod";
-import { Dict } from "./TDict";
 import { TypeType } from "./ETypeType";
 import { ParameterOption } from "./EParameterOption";
 
